@@ -1,7 +1,13 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Scanner;
+
+import javax.swing.JOptionPane;
+
 
 public class Start {
 	
-	private static int[] sBox = new int[] {
+	private static int[] SBox = new int[] {
             //0     1    2      3     4    5     6     7      8    9     A      B    C     D     E     F
             0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
             0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -20,7 +26,7 @@ public class Start {
             0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
             0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 };
 
-    private static int[] rsBox = new int[] {
+    private static int[] reverseSBox = new int[] {
             0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
             0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
             0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -38,7 +44,7 @@ public class Start {
             0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
             0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d };
 
-    private static int[] rCon = new int[] {
+    private static int[] RCon = new int[] {
             0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,
             0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39,
             0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
@@ -58,7 +64,7 @@ public class Start {
 
 	
     //keys
-	byte key[];
+	byte mainKey[];
 	int w[] = new int [44];
 	
 	int Nb = 4; //no. of words per 32 bit
@@ -66,39 +72,195 @@ public class Start {
 
 	// number of rounds for current AES
 	int Nr = 10;
-	private int[][][] state;
 	
-	String input= "My name is Sajed Jalil.";
-	
-	
+	String input = "";
+	int totalPackets=0;
+	String packets[];
+	String encryptedText[];
+	int excessChars = 0;
 	
 	public static void main(String[] args) {
 		
 		new Start();
 	}
 	
+	
 	public Start() {
 		
-		key = makeKey();
+		
+		
+		input = JOptionPane.showInputDialog("Please enter text: ");
+		
+		mainKey = makeKey();
 		keyExpansion();
 		
+		
 		input = fillBlock(input);
-        System.out.println(input);
+		messageFragmenter(input);
+		
+        //System.out.println(input);
+        //encrypt
+		System.out.println("Starting Encryption");
+		String encryptedString = "";
+		
+        for(int i=0; i<totalPackets; i++) {
+        	int[][] save = parseInputBlock( packets[i] );
+        	save = encrypt(save);
+        	
+        	String temp="";
+        	for(int j=0; j<4; j++) {
+        		for(int k=0; k<4; k++) {
+        			temp += (char)save[j][k];
+        		}
+        	}
+        	
+        	//System.out.print(temp);
+        	encryptedString += temp;
+        	encryptedText[i] = temp;
+        }
+        //System.out.println();
+        System.out.println("Finised Encryption");
+        try{    
+            FileWriter fw=new FileWriter("encrypted.txt");    
+            fw.write(encryptedString);    
+            fw.close();    
+        }catch(Exception e){
+        	System.out.println(e);
+        }
         
-        state = new int[2][4][Nb];
-        
-        int[][] save = parseInputBlock( input.substring(0, 16));
         
         
-        save = encrypt(save);
-        
-        for(int i=0; i<4; i++) {
-			for(int j=0; j<4; j++) {
-				System.out.print(save[i][j]);
-			}
-		}
+        //decrypt 
+        String output = "";
+        System.out.println("Starting Decryption");
+        for(int i=0; i<totalPackets; i++) {
+        	
+        	int save[][] = new int[4][4];
+            for(int j=0; j<4; j++) {
+            	for(int k=0; k<4; k++) {
+            		save[j][k] = encryptedText[i].charAt( (j*4)+k );
+            	}
+            }
+            
+            save = decrypt(save);
+            
+            for(int j=0; j<4; j++) {
+            	for(int k=0; k<4; k++) {
+            		output += (char)save[j][k];
+            	}
+            }
+        }
+        System.out.println("Ending Decryption");
+        try{    
+            FileWriter fw=new FileWriter("decrypted.txt");    
+            fw.write(output.substring(0, output.length()-excessChars));    
+            fw.close();    
+        }catch(Exception e){
+        	System.out.println(e);
+        }
         
 	}
+	
+	
+	private void messageFragmenter(String text) {
+
+		int len = text.length();
+		totalPackets = len/16;
+		packets = new String[totalPackets];
+		
+		encryptedText = new String[totalPackets];
+		
+		for(int i=0; i<totalPackets; i++) {
+			packets[i] = text.substring(i*16, (i*16)+16);
+			//System.out.println(packets[i]);
+		}
+		
+		//for(String s: packets) System.out.println(s);
+		
+	}
+	
+	
+	private int[][] inverseMixColumns(int[][] state) {
+        int temp0, temp1, temp2, temp3;
+        for (int c = 0; c < Nb; c++) {
+            temp0 = mult(0x0e, state[0][c]) ^ mult(0x0b, state[1][c]) ^ mult(0x0d, state[2][c]) ^ mult(0x09, state[3][c]);
+            temp1 = mult(0x09, state[0][c]) ^ mult(0x0e, state[1][c]) ^ mult(0x0b, state[2][c]) ^ mult(0x0d, state[3][c]);
+            temp2 = mult(0x0d, state[0][c]) ^ mult(0x09, state[1][c]) ^ mult(0x0e, state[2][c]) ^ mult(0x0b, state[3][c]);
+            temp3 = mult(0x0b, state[0][c]) ^ mult(0x0d, state[1][c]) ^ mult(0x09, state[2][c]) ^ mult(0x0e, state[3][c]);
+
+            state[0][c] = temp0;
+            state[1][c] = temp1;
+            state[2][c] = temp2;
+            state[3][c] = temp3;
+        }
+        return state;
+    }
+	
+	private int[][] inverseShiftRows(int[][] state) {
+        int temp1, temp2, temp3, i;
+
+        // row 1;
+        temp1 = state[1][Nb - 1];
+        for (i = Nb - 1; i > 0; i--) {
+            state[1][i] = state[1][(i - 1) % Nb];
+        }
+        state[1][0] = temp1;
+        // row 2
+        temp1 = state[2][Nb - 1];
+        temp2 = state[2][Nb - 2];
+        for (i = Nb - 1; i > 1; i--) {
+            state[2][i] = state[2][(i - 2) % Nb];
+        }
+        state[2][1] = temp1;
+        state[2][0] = temp2;
+        // row 3
+        temp1 = state[3][Nb - 3];
+        temp2 = state[3][Nb - 2];
+        temp3 = state[3][Nb - 1];
+        for (i = Nb - 1; i > 2; i--) {
+            state[3][i] = state[3][(i - 3) % Nb];
+        }
+        state[3][0] = temp1;
+        state[3][1] = temp2;
+        state[3][2] = temp3;
+
+        return state;
+    }
+	
+	private int[][] decrypt(int data[][]) {
+		
+        int currentRound = Nr;
+        addRoundKey(data, currentRound);
+
+        for (currentRound = Nr - 1; currentRound > 0; currentRound--) {
+            inverseShiftRows(data);
+            inverseSubstituteBytes(data);
+            addRoundKey(data, currentRound);
+            inverseMixColumns(data);
+        }
+        inverseShiftRows(data);
+        inverseSubstituteBytes(data);
+        addRoundKey(data, currentRound);
+        return data;
+	}
+	
+	private int[][] inverseSubstituteBytes(int[][] state) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < Nb; j++) {
+                state[i][j] = inverseSubstituteWord(state[i][j]) & 0xFF;
+            }
+        }
+        return state;
+    }
+	
+	private static int inverseSubstituteWord(int word) {
+        int subWord = 0;
+        for (int i = 24; i >= 0; i -= 8) {
+            int in = word << i >>> 24;
+            subWord |= reverseSBox[in] << (24 - i);
+        }
+        return subWord;
+    }
 	
 	private int[][] parseInputBlock(String temp){
 		
@@ -121,13 +283,13 @@ public class Start {
         return s;
     }
 	
-	private int[][] subBytes(int[][] state) {
+	private int[][] substituteBytes(int[][] data) {
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < Nb; j++) {
-                state[i][j] = subWord(state[i][j]) & 0xFF;
+                data[i][j] = substituteWord(data[i][j]) & 0xFF;
             }
         }
-        return state;
+        return data;
 	}
 	
 	private int[][] shiftRows(int[][] state) {
@@ -163,7 +325,7 @@ public class Start {
         return state;
     }
 	
-    private int[][] mixColumns(int[][] state) {
+    private int[][] mixTheColumns(int[][] state) {
         int temp0, temp1, temp2, temp3;
         for (int c = 0; c < Nb; c++) {
 
@@ -208,27 +370,27 @@ public class Start {
         addRoundKey(data, cureentRound);
 
         for (cureentRound = 1; cureentRound < Nr; cureentRound++) {
-            subBytes(data);
+            substituteBytes(data);
             shiftRows(data);
-            mixColumns(data);
+            mixTheColumns(data);
             addRoundKey(data, cureentRound);
         }
-        subBytes(data);
+        substituteBytes(data);
         shiftRows(data);
         addRoundKey(data, cureentRound);
         return data;
 	}
 
-    private int subWord(int word) {
+    private int substituteWord(int word) {
         int subWord = 0;
         for (int i = 24; i >= 0; i -= 8) {
             int in = word << i >>> 24;
-            subWord |= sBox[in] << (24 - i);
+            subWord |= SBox[in] << (24 - i);
         }
         return subWord;
     }	
 	
-    private int rotWord(int word) {
+    private int rotateWord(int word) {
         return (word << 8) | ((word & 0xFF000000) >>> 24);
     }
     
@@ -237,20 +399,21 @@ public class Start {
 		int temp, i = 0;
         while (i < Nk) {
             w[i] = 0x00000000;
-            w[i] |= key[4 * i] << 24;
-            w[i] |= key[4 * i + 1] << 16;
-            w[i] |= key[4 * i + 2] << 8;
-            w[i] |= key[4 * i + 3];
+            w[i] |= mainKey[4 * i] << 24;
+            w[i] |= mainKey[4 * i + 1] << 16;
+            w[i] |= mainKey[4 * i + 2] << 8;
+            w[i] |= mainKey[4 * i + 3];
             i++;
         }
+        
         i = Nk;
         while (i < Nb * (Nr + 1)) {
             temp = w[i - 1];
             if (i % Nk == 0) {
-                // applying an XOR with a constant round rCon.
-                temp = subWord(rotWord(temp)) ^ (rCon[i / Nk] << 24);
+                //  XOR with rCon.
+                temp = substituteWord(rotateWord(temp)) ^ (RCon[i / Nk] << 24);
             } else if (Nk > 6 && (i % Nk == 4)) {
-                temp = subWord(temp);
+                temp = substituteWord(temp);
             } else {
             }
             w[i] = w[i - Nk] ^ temp;
@@ -264,13 +427,15 @@ public class Start {
 	
 	private byte[] makeKey() {
         String key = Long.toHexString(Double.doubleToLongBits(Math.random()));
-        System.out.println(key.length());
+        //System.out.println(key.length());
         return key.getBytes();
     }
 	
 	private String fillBlock(String text) {
-        int spaceNum = text.getBytes().length%16==0?0:16-text.getBytes().length%16;
-        for (int i = 0; i<spaceNum; i++) text += " ";
-        return text;
+
+		int neededChars = 16- (text.length()%16);
+		excessChars = neededChars;
+		for(int i=0; i<neededChars; i++) text += " ";
+		return text;
     }
 }
