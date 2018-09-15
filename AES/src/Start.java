@@ -62,6 +62,7 @@ public class Start {
             0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,
             0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d };
 
+    
 	
     //keys
 	byte mainKey[];
@@ -150,6 +151,8 @@ public class Start {
             	}
             }
         }
+        
+        
         System.out.println("Ending Decryption");
         try{    
             FileWriter fw=new FileWriter("decrypted.txt");    
@@ -226,6 +229,7 @@ public class Start {
 
         return state;
     }
+
 	
 	private int[][] decrypt(int data[][]) {
 		
@@ -412,22 +416,19 @@ public class Start {
             if (i % Nk == 0) {
                 //  XOR with rCon.
                 temp = substituteWord(rotateWord(temp)) ^ (RCon[i / Nk] << 24);
-            } else if (Nk > 6 && (i % Nk == 4)) {
-                temp = substituteWord(temp);
-            } else {
             }
             w[i] = w[i - Nk] ^ temp;
             i++;
         }
         
-        //for(int v=0; v<44; v++) System.out.println(w[v]);
+        for(int v=0; v<44; v++) System.out.println(w[v]);
 	}
 	
 
 	
 	private byte[] makeKey() {
         String key = Long.toHexString(Double.doubleToLongBits(Math.random()));
-        //System.out.println(key.length());
+        System.out.println("Key: "+key);
         return key.getBytes();
     }
 	
