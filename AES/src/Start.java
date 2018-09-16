@@ -129,7 +129,7 @@ public class Start {
         	System.out.println(e);
         }
         
-        
+        System.out.println("Encrypted Text: "+encryptedString);
         
         //decrypt 
         String output = "";
@@ -142,7 +142,7 @@ public class Start {
             		save[j][k] = encryptedText[i].charAt( (j*4)+k );
             	}
             }
-            
+            //print(save);
             save = decrypt(save);
             
             for(int j=0; j<4; j++) {
@@ -162,6 +162,7 @@ public class Start {
         	System.out.println(e);
         }
         
+        System.out.println("Decrypted Text: "+output.substring(0, output.length()-excessChars));
 	}
 	
 	
@@ -184,7 +185,9 @@ public class Start {
 	
 	
 	private int[][] inverseMixColumns(int[][] state) {
-        int temp0, temp1, temp2, temp3;
+        
+		//print(state);
+		int temp0, temp1, temp2, temp3;
         for (int c = 0; c < Nb; c++) {
             temp0 = mult(0x0e, state[0][c]) ^ mult(0x0b, state[1][c]) ^ mult(0x0d, state[2][c]) ^ mult(0x09, state[3][c]);
             temp1 = mult(0x09, state[0][c]) ^ mult(0x0e, state[1][c]) ^ mult(0x0b, state[2][c]) ^ mult(0x0d, state[3][c]);
@@ -195,6 +198,8 @@ public class Start {
             state[1][c] = temp1;
             state[2][c] = temp2;
             state[3][c] = temp3;
+            
+            //print(state);
         }
         return state;
     }
@@ -232,20 +237,39 @@ public class Start {
 
 	
 	private int[][] decrypt(int data[][]) {
-		
+		//print(data);
         int currentRound = Nr;
         addRoundKey(data, currentRound);
-
+        //print(data);
         for (currentRound = Nr - 1; currentRound > 0; currentRound--) {
-            inverseShiftRows(data);
+            
+        	inverseShiftRows(data);
+        	//if(currentRound == Nr-1) print(data);
             inverseSubstituteBytes(data);
+            //if(currentRound == Nr-1) print(data);
             addRoundKey(data, currentRound);
+            //if(currentRound == Nr-1) print(data);
             inverseMixColumns(data);
+            //if(currentRound == Nr-1) print(data);
+            //print(data);
         }
         inverseShiftRows(data);
         inverseSubstituteBytes(data);
         addRoundKey(data, currentRound);
+        
+        
         return data;
+	}
+	
+	
+	private void print(int[][] data) {
+		//System.out.println(save[0][0]);
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+				System.out.print( data[i][j] + " ");
+			}
+		}
+		System.out.println();
 	}
 	
 	private int[][] inverseSubstituteBytes(int[][] state) {
@@ -281,7 +305,15 @@ public class Start {
 	private int[][] addRoundKey(int[][] s, int round) {
         for (int c = 0; c < Nb; c++) {
             for (int r = 0; r < 4; r++) {
+            	//System.out.println(w[round * Nb + c]);
+            	
+            	//if( c== 1 && r== 1 && round == 10) {
+            		//print(s);
+            		//System.out.println(s[r][c]);
+            	//}
+            	//if( c== 1 && r== 1 && round == 10) System.out.println( (char) (s[r][c] ^ ((w[round * Nb + c] << (r * 8)) >>> 24)));
                 s[r][c] = s[r][c] ^ ((w[round * Nb + c] << (r * 8)) >>> 24);
+                //if( c== 1 && r== 1 && round == 10)print(s);
             }
         }
         return s;
@@ -330,7 +362,8 @@ public class Start {
     }
 	
     private int[][] mixTheColumns(int[][] state) {
-        int temp0, temp1, temp2, temp3;
+        //print(s);
+    	int temp0, temp1, temp2, temp3;
         for (int c = 0; c < Nb; c++) {
 
             temp0 = mult(0x02, state[0][c]) ^ mult(0x03, state[1][c]) ^ state[2][c] ^ state[3][c];
@@ -427,7 +460,8 @@ public class Start {
 
 	
 	private byte[] makeKey() {
-        String key = Long.toHexString(Double.doubleToLongBits(Math.random()));
+        //String key = Long.toHexString(Double.doubleToLongBits(Math.random()));
+		String key = "3fe07262229c649b";
         System.out.println("Key: "+key);
         return key.getBytes();
     }

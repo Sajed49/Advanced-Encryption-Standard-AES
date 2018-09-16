@@ -46,7 +46,7 @@ public class Decryptor {
             	}
             }
             //System.out.println();
-            
+            print(save);
             save = decryptPacket(save);
             //System.out.println(save);
             for(int j=0; j<4; j++) {
@@ -61,15 +61,20 @@ public class Decryptor {
 	
 	
 	private int[][] decryptPacket(int[][] data) {
-		
+		print(data);
 		int currentRound = numberOfRounds;
         addRoundKey(data, currentRound);
-
+        //print(data);
         for (currentRound = numberOfRounds - 1; currentRound > 0; currentRound--) {
             inverseShiftRows(data);
+            //if(currentRound == 10-1) print(data);
             inverseSubstituteBytes(data);
+            //if(currentRound == 10-1) print(data);
             addRoundKey(data, currentRound);
+            //if(currentRound == 10-1) print(data);
             inverseMixColumns(data);
+            //if(currentRound == 10-1) print(data);
+            //print(data);
         }
         inverseShiftRows(data);
         inverseSubstituteBytes(data);
@@ -78,11 +83,31 @@ public class Decryptor {
         return data;
 	}
 	
+	private void print(int[][] data) {
+		//System.out.println(save[0][0]);
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+				System.out.print(data[i][j]+" " );
+			}
+		}
+		System.out.println();
+	}
 
 	private int[][] addRoundKey(int[][] s, int round) {
-        for (int c = 0; c < numberOfBytes; c++) {
+        
+		//System.out.println(key.allKey[round * Nb + c]);
+		for (int c = 0; c < Nb; c++) {
             for (int r = 0; r < 4; r++) {
-                s[r][c] = s[r][c] ^ ((key.allKey[round * numberOfBytes + c] << (r * 8)) >>> 24);
+            	//if(round == 10) System.out.println(key.allKey[round * Nb + c]);
+            	
+            	if( c== 1 && r== 1 && round == 10) {
+            		print(s);
+            		System.out.println(s[r][c]);
+            		//System.out.println( s[r][c] ^ ((key.allKey[round * Nb + c] << (r * 8)) >>> 24) );
+            	}
+            	//if( c== 1 && r== 1 && round == 10) System.out.println( (char) (s[r][c] ^ ((key.allKey[round * Nb + c] << (r * 8)) >>> 24)) );
+                s[r][c] = s[r][c] ^ ((key.allKey[round * Nb + c] << (r * 8)) >>> 24);
+                if( c== 1 && r== 1 && round == 10) print(s);
             }
         }
         return s;
@@ -137,9 +162,13 @@ public class Decryptor {
         return subWord;
     }
 	
+	private int Nb =4;
+	
 	private int[][] inverseMixColumns(int[][] state) {
-        int temp0, temp1, temp2, temp3;
-        for (int c = 0; c < numberOfBytes; c++) {
+		
+		//print(state);
+		int temp0, temp1, temp2, temp3;
+        for (int c = 0; c < Nb; c++) {
             temp0 = mult(0x0e, state[0][c]) ^ mult(0x0b, state[1][c]) ^ mult(0x0d, state[2][c]) ^ mult(0x09, state[3][c]);
             temp1 = mult(0x09, state[0][c]) ^ mult(0x0e, state[1][c]) ^ mult(0x0b, state[2][c]) ^ mult(0x0d, state[3][c]);
             temp2 = mult(0x0d, state[0][c]) ^ mult(0x09, state[1][c]) ^ mult(0x0e, state[2][c]) ^ mult(0x0b, state[3][c]);
@@ -149,6 +178,8 @@ public class Decryptor {
             state[1][c] = temp1;
             state[2][c] = temp2;
             state[3][c] = temp3;
+            
+            //print(state);
         }
         return state;
     }
@@ -178,14 +209,17 @@ public class Decryptor {
 	}
 	
 	private void getEncryptedMessage() {
-		encryptedRawMeassage = new MyFileReader("", "encrypted.txt").getMessage();
+		encryptedRawMeassage = new MyFileReader("", "encrypted.dat").getMessage();
 		
+		for(int i=0; i<encryptedRawMeassage.length(); i++) System.out.println( (int) encryptedRawMeassage.charAt(i));
+		System.out.println();
 	}
 	
 	private void breakIntoPackets() {
 		
 		int len = encryptedRawMeassage.length();
 		totalPackets = len/16;
+		//System.out.println(len);
 		packets = new String[totalPackets];
 		
 		for(int i=0; i<totalPackets; i++) {

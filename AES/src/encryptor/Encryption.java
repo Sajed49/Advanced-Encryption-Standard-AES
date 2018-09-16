@@ -65,8 +65,9 @@ public class Encryption {
         	encryptedText[i] = temp;
         }
         
+        //System.out.println(encryptedString.length());
         //write encrypted message to a file
-        new MyFileWriter("", "encrypted.txt", encryptedString);
+        new MyFileWriter("", "encrypted.dat", encryptedString);
         
         //write key to a file
         new MyFileWriter("", "key.txt", new String( key.firstKey ));

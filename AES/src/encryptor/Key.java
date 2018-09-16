@@ -16,7 +16,8 @@ public class Key {
 	
 	private void generateFirstKey() {
 		
-		String key = Long.toHexString(Double.doubleToLongBits(Math.random()));
+		//String key = Long.toHexString(Double.doubleToLongBits(Math.random()));
+		String key = "3fe07262229c649b";
         System.out.println("Key: "+key);
         firstKey = key.getBytes();
 	}
